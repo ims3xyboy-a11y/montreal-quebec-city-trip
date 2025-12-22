@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Montreal Road Trip 12/23-24</title>
+    <title>Montreal Road Trip</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,25 +13,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Zen Maru Gothic', sans-serif; background-color: #f8fafc; touch-action: pan-y; }
+        body { font-family: 'Zen Maru Gothic', sans-serif; background-color: #f0f4f8; touch-action: pan-y; overscroll-behavior-y: none; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .tab-btn.active { color: #4f46e5; border-bottom: 3px solid #4f46e5; }
-        .leaflet-container { width: 100%; height: 100%; z-index: 1; border-radius: 1rem; }
-        .parking-note { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 8px; font-size: 11px; margin-top: 5px; border-radius: 4px; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .tab-btn.active { color: #4f46e5; border-bottom: 2px solid #4f46e5; }
+        .leaflet-container { width: 100%; height: 100%; z-index: 1; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
 
 <div id="app" class="max-w-md mx-auto min-h-screen bg-white shadow-2xl relative overflow-hidden flex flex-col">
 
-    <header class="bg-white sticky top-0 z-20 px-4 pt-4 pb-2 border-b border-slate-100 shadow-sm">
+    <header class="glass sticky top-0 z-20 px-4 pt-4 pb-2 border-b border-slate-100">
         <div class="flex justify-between items-start mb-2">
             <div>
-                <h1 class="text-xl font-black text-slate-800 tracking-wider">Montréal <span class="text-indigo-600">Trip</span></h1>
-                <p class="text-[10px] text-slate-400 font-bold uppercase">Toronto ➔ Montreal Road Trip</p>
-            </div>
-            <div class="text-right">
-                <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">1 CAD ≈ 5.75 HKD</span>
+                <h1 class="text-xl font-black text-slate-800 tracking-wider flex items-center gap-2">
+                    Montréal <span class="text-indigo-500 text-xs bg-indigo-100 px-2 py-0.5 rounded-full">Road Trip</span>
+                </h1>
+                <p class="text-[10px] text-slate-400 font-bold mt-1">Toronto ➔ Montreal</p>
             </div>
         </div>
 
@@ -44,33 +44,40 @@
         </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-4 pb-24">
+    <main class="flex-1 overflow-y-auto p-4 pb-24 scroll-smooth">
         
-        <div class="flex border-b border-slate-100 mb-4 sticky top-0 bg-white z-10" v-if="view !== 'todo'">
-            <button @click="tab = 'schedule'" :class="['tab-btn flex-1 py-2 text-xs font-bold', tab === 'schedule' ? 'active' : 'text-slate-400']">行程景點</button>
-            <button @click="tab = 'money'" :class="['tab-btn flex-1 py-2 text-xs font-bold', tab === 'money' ? 'active' : 'text-slate-400']">消費記錄</button>
+        <div v-if="view !== 'todo'" class="bg-gradient-to-br from-indigo-50 to-blue-50 p-4 rounded-2xl mb-5 flex justify-between items-center shadow-sm border border-indigo-100">
+            <div>
+                <div class="text-3xl font-black text-slate-700">-2°C</div>
+                <div class="text-xs text-slate-500 font-bold mt-1"><i class="fas fa-snowflake mr-1"></i> 冬季寒冷</div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs text-slate-400 font-bold">Montreal (12月)</div>
+                <div class="text-[10px] text-slate-400">體感 -8°C</div>
+            </div>
         </div>
 
-        <div v-if="view !== 'todo' && tab === 'schedule'" class="space-y-4">
-            <div class="h-44 bg-slate-100 rounded-2xl overflow-hidden shadow-inner border border-slate-200 relative">
+        <div class="flex border-b border-slate-100 mb-4 sticky top-0 bg-white z-10" v-if="view !== 'todo'">
+            <button @click="tab = 'schedule'" :class="['tab-btn flex-1 py-2 text-xs font-bold', tab === 'schedule' ? 'active' : 'text-slate-400']">行程</button>
+            <button @click="tab = 'money'" :class="['tab-btn flex-1 py-2 text-xs font-bold', tab === 'money' ? 'active' : 'text-slate-400']">開支</button>
+            <button @click="tab = 'shop'" :class="['tab-btn flex-1 py-2 text-xs font-bold', tab === 'shop' ? 'active' : 'text-slate-400']">購物</button>
+        </div>
+
+        <div v-if="view !== 'todo' && tab === 'schedule'" class="space-y-4 animate-fade-in">
+            <div class="h-40 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200 relative">
                 <div :id="'map-' + selectedDate" class="leaflet-container"></div>
             </div>
-
-            <div v-if="selectedDate === '2025-12-23'" class="parking-note text-amber-800">
-                <i class="fas fa-parking mr-1"></i> <b>停車建議：</b>進入 Old Montreal 後，建議停在 <b>Parking du Vieux-Port</b> 或地下停車場，然後步行遊覽。
-            </div>
-
             <div class="space-y-3">
                 <div v-for="item in currentDayItems" :key="item.id" @click="editItem('schedule', item)"
-                     class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex gap-3 relative group active:bg-slate-50">
-                    <div class="flex flex-col items-center min-w-[45px]">
-                        <span class="text-xs font-black text-indigo-500">{{ item.time }}</span>
+                     class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex gap-3 active:scale-[0.98] transition-transform cursor-pointer">
+                    <div class="flex flex-col items-center min-w-[40px]">
+                        <span class="text-xs font-black text-slate-300">{{ item.time }}</span>
                         <div class="h-full w-0.5 bg-slate-100 my-1 rounded-full"></div>
                     </div>
                     <div class="flex-1">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-slate-800 text-sm">{{ item.title }}</h3>
-                            <span :class="['text-[10px] px-2 py-0.5 rounded-full font-bold', catColor(item.cat)]">{{ catName(item.cat) }}</span>
+                            <span :class="['text-[10px] px-1.5 py-0.5 rounded font-bold', catColor(item.cat)]">{{ catName(item.cat) }}</span>
                         </div>
                         <p class="text-xs text-slate-500 mt-1 leading-relaxed">{{ item.desc }}</p>
                     </div>
@@ -79,196 +86,219 @@
         </div>
 
         <div v-if="view !== 'todo' && tab === 'money'" class="space-y-4">
-            <div class="bg-gradient-to-br from-slate-800 to-slate-900 text-white p-6 rounded-3xl shadow-xl">
-                <p class="text-xs text-slate-400 mb-1">今日支出 (CAD)</p>
-                <h2 class="text-4xl font-black">$ {{ dayTotal }}</h2>
-                <div class="mt-4 flex gap-4 text-xs">
-                    <div><p class="opacity-60">約 HKD</p><p class="font-bold text-indigo-400">$ {{ (dayTotal * rates.HKD_VAL).toFixed(0) }}</p></div>
-                </div>
+            <div class="bg-slate-800 text-white p-5 rounded-2xl shadow-lg">
+                <p class="text-xs text-slate-400 mb-1">本日總開支</p>
+                <h2 class="text-3xl font-black tracking-tight">$ {{ dayTotal }}</h2>
             </div>
-
             <div class="space-y-2">
                 <div v-for="exp in currentDayExpenses" :key="exp.id" @click="editItem('money', exp)"
-                     class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100">
+                     class="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 cursor-pointer">
                     <div class="flex items-center gap-3">
-                        <div :class="['w-9 h-9 rounded-xl flex items-center justify-center', exp.method === 'card' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600']">
+                        <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs', exp.method === 'card' ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600']">
                             <i :class="exp.method === 'card' ? 'fas fa-credit-card' : 'fas fa-wallet'"></i>
                         </div>
                         <span class="font-bold text-slate-700 text-sm">{{ exp.title }}</span>
                     </div>
-                    <div class="font-black text-slate-800">-${{ exp.amount }}</div>
+                    <div class="font-black text-slate-800 text-sm">-${{ exp.amount }}</div>
                 </div>
             </div>
-            <button @click="openModal('money')" class="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-sm font-bold">+ 新增消費項目</button>
+            <button @click="openModal('money')" class="w-full py-3 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-bold">+ 新增支出</button>
+        </div>
+
+        <div v-if="view !== 'todo' && tab === 'shop'" class="space-y-3">
+             <div v-for="item in shoppingList" :key="item.id" class="p-3 rounded-xl border flex justify-between items-center bg-white border-slate-100">
+                <div @click.stop="toggleDone(item, shoppingList)" class="cursor-pointer p-2 -ml-2">
+                    <div :class="['w-5 h-5 rounded border flex items-center justify-center', item.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300']">
+                        <i class="fas fa-check text-[10px]" v-if="item.done"></i>
+                    </div>
+                </div>
+                <div @click="editItem('shop', item)" class="flex-1 px-2">
+                    <div :class="['text-sm font-bold', item.done ? 'line-through text-slate-400' : 'text-slate-700']">{{ item.title }}</div>
+                    <div class="text-[10px] text-slate-400">預算: ${{ item.price || '-' }}</div>
+                </div>
+             </div>
+             <button @click="openModal('shop')" class="w-full py-3 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-bold">+ 新增商品</button>
         </div>
 
         <div v-if="view === 'todo'" class="space-y-6">
-            <div class="bg-indigo-600 text-white p-6 rounded-3xl shadow-lg">
-                <h3 class="text-sm font-bold opacity-80 mb-1">行程總支出 (CAD)</h3>
-                <h2 class="text-4xl font-black mb-4">$ {{ allExpensesTotal }}</h2>
-                <p class="text-xs opacity-80 border-t border-indigo-400 pt-3">換算港幣：HKD $ {{ (allExpensesTotal * rates.HKD_VAL).toFixed(0) }}</p>
+            <div class="bg-indigo-600 text-white p-5 rounded-2xl shadow-lg">
+                <h3 class="font-bold mb-3 opacity-80">旅程總支出</h3>
+                <h2 class="text-4xl font-black tracking-tight">$ {{ allExpensesTotal }}</h2>
             </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <i class="fas fa-clipboard-check text-orange-500"></i> 行前備忘錄
-                </h3>
-                <div v-for="t in todos" :key="t.id" class="flex justify-between items-center py-3 border-b border-slate-50 last:border-0" @click="toggleDone(t)">
-                    <div class="flex items-center gap-3">
-                        <i :class="['fas', t.done ? 'fa-check-circle text-emerald-500' : 'fa-circle text-slate-200']"></i>
-                        <span :class="['text-sm font-medium', t.done ? 'line-through text-slate-300' : 'text-slate-600']">{{ t.title }}</span>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-3 border-l-4 border-orange-500 pl-2">Montreal 待辦</h3>
+                <div v-for="t in todos" :key="t.id" class="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
+                    <div class="flex items-center gap-3 cursor-pointer" @click="toggleDone(t, todos)">
+                        <div :class="['w-4 h-4 rounded border flex items-center justify-center', t.done ? 'bg-orange-500 border-orange-500 text-white' : 'border-slate-300']">
+                            <i class="fas fa-check text-[8px]" v-if="t.done"></i>
+                        </div>
+                        <span :class="['text-sm', t.done ? 'line-through text-slate-300' : 'text-slate-600']">{{ t.title }}</span>
                     </div>
+                    <button @click.stop="deleteDirectly(t.id, todos)" class="text-slate-200 hover:text-red-500 p-2"><i class="fas fa-trash-alt"></i></button>
                 </div>
+                <button @click="openModal('todo')" class="w-full mt-2 py-2 rounded-lg bg-orange-50 text-orange-600 text-xs font-bold">+ 新增待辦</button>
             </div>
+            <div class="p-4 text-center"><button @click="resetData" class="text-red-300 text-[10px] underline">重置所有資料</button></div>
         </div>
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/80 backdrop-blur-md border-t border-slate-100 flex justify-around py-3 z-30 shadow-2xl">
-        <button @click="view = 'day'; tab = 'schedule'" :class="view !== 'todo' ? 'text-indigo-600' : 'text-slate-400'" class="flex flex-col items-center">
-            <i class="fas fa-map-marked-alt text-xl"></i><span class="text-[10px] mt-1 font-bold">行程</span>
-        </button>
-        <button @click="view = 'todo'" :class="view === 'todo' ? 'text-indigo-600' : 'text-slate-400'" class="flex flex-col items-center">
-            <i class="fas fa-th-large text-xl"></i><span class="text-[10px] mt-1 font-bold">概覽</span>
-        </button>
-    </nav>
-
-    <div v-if="showModal" class="fixed inset-0 z-50 bg-black/60 flex items-end justify-center" @click.self="showModal = false">
-        <div class="bg-white w-full max-w-md rounded-t-[2.5rem] p-8 shadow-2xl animate-slide-up">
-            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
-            <h3 class="font-black text-xl mb-6 text-slate-800">{{ modalMode === 'add' ? '新增' : '編輯' }}項目</h3>
+    <div v-if="showModal" class="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end justify-center" @click.self="showModal = false">
+        <div class="bg-white w-full rounded-t-3xl p-6 shadow-2xl">
+            <h3 class="font-black text-xl text-slate-800 mb-4">{{ modalMode === 'add' ? '新增' : '編輯' }}項目</h3>
             
-            <div v-if="modalType === 'money'" class="space-y-4">
-                <input v-model="form.title" placeholder="項目名稱 (例如: 停車費)" class="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none ring-1 ring-slate-100 focus:ring-indigo-500">
+            <div v-if="modalType === 'schedule'" class="space-y-3">
                 <div class="flex gap-2">
-                    <input v-model.number="form.amount" type="number" placeholder="金額" class="flex-1 bg-slate-50 p-4 rounded-2xl text-lg font-bold border-none ring-1 ring-slate-100">
-                    <select v-model="form.method" class="bg-slate-50 p-4 rounded-2xl text-sm border-none ring-1 ring-slate-100">
+                    <input v-model="form.time" type="time" class="bg-slate-50 p-3 rounded-xl text-sm font-bold border-none w-1/3">
+                    <select v-model="form.cat" class="bg-slate-50 p-3 rounded-xl text-sm font-bold border-none flex-1">
+                        <option value="spot">📸 景點</option>
+                        <option value="food">🍽️ 美食</option>
+                        <option value="drive">🚗 交通</option>
+                        <option value="shop">🛍️ 購物</option>
+                    </select>
+                </div>
+                <input v-model="form.title" placeholder="標題" class="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold border-none">
+                <textarea v-model="form.desc" placeholder="備註..." class="w-full bg-slate-50 p-3 rounded-xl text-sm border-none h-20"></textarea>
+                <div class="flex gap-2">
+                    <input v-model.number="form.lat" type="number" step="any" placeholder="緯度" class="flex-1 bg-slate-50 p-3 rounded-xl text-xs border-none">
+                    <input v-model.number="form.lng" type="number" step="any" placeholder="經度" class="flex-1 bg-slate-50 p-3 rounded-xl text-xs border-none">
+                </div>
+            </div>
+
+            <div v-if="modalType === 'money'" class="space-y-3">
+                <input v-model="form.title" placeholder="項目" class="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold border-none">
+                <div class="flex gap-2">
+                    <input v-model.number="form.amount" type="number" placeholder="金額" class="flex-1 bg-slate-50 p-3 rounded-xl text-lg font-black border-none">
+                    <select v-model="form.method" class="w-1/3 bg-slate-50 p-3 rounded-xl text-sm font-bold border-none">
                         <option value="card">信用卡</option>
                         <option value="cash">現金</option>
                     </select>
                 </div>
             </div>
 
-            <div class="flex gap-3 mt-8">
-                <button v-if="modalMode === 'edit'" @click="deleteItem" class="px-6 py-4 bg-red-50 text-red-500 rounded-2xl font-bold text-sm">刪除</button>
-                <button @click="saveForm" class="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-indigo-100">儲存</button>
+            <div v-if="modalType === 'shop'" class="space-y-3">
+                <input v-model="form.title" placeholder="商品名稱" class="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold border-none">
+                <input v-model.number="form.price" type="number" placeholder="預算" class="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold border-none">
+            </div>
+
+            <div v-if="modalType === 'todo'" class="space-y-3">
+                <input v-model="form.title" placeholder="待辦事項" class="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold border-none">
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button v-if="modalMode === 'edit'" @click="deleteFromModal" class="px-4 py-3 bg-red-50 text-red-500 rounded-xl font-bold text-xs">刪除</button>
+                <div class="flex-1 flex gap-3">
+                    <button @click="showModal = false" class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold text-sm">取消</button>
+                    <button @click="saveForm" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm">儲存</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <button v-if="view !== 'todo' && tab === 'schedule'" @click="openModal('schedule')" class="absolute bottom-6 right-6 w-12 h-12 bg-slate-800 text-white rounded-full shadow-xl flex items-center justify-center active:scale-90 transition z-30">
+        <i class="fas fa-plus"></i>
+    </button>
+
 </div>
 
 <script>
-    const { createApp, ref, computed, onMounted, nextTick } = Vue;
+    const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+    const STORAGE_KEY = 'mtl_trip_v2025_no_rates';
 
     const DEFAULT_DATA = {
         schedule: [
-            // Day 1: 12/23
-            { id: 1, date: '2025-12-23', time: '05:00', title: '多倫多開車出發', cat: 'drive', desc: '早起避開交通，往蒙特婁出發。', lat: 43.6532, lng: -79.3832 },
-            { id: 2, date: '2025-12-23', time: '11:30', title: 'Schwartz\'s Deli', cat: 'food', desc: '地道煙肉三文治午餐。注意路邊短暫停車。', lat: 45.5163, lng: -73.5776 },
-            { id: 3, date: '2025-12-23', time: '13:30', title: 'Old Montreal 集中遊覽', cat: 'spot', desc: '停好車後步行：Rue Saint-Paul, Notre-Dame Basilica, Crew Collective Café。', lat: 45.5075, lng: -73.5532 },
-            { id: 4, date: '2025-12-23', time: '16:00', title: 'La Grande Roue', cat: 'spot', desc: '摩天輪俯瞰港口與舊城全景。', lat: 45.5094, lng: -73.5492 },
-            { id: 5, date: '2025-12-23', time: '18:30', title: 'Patati Patata', cat: 'food', desc: '地道小食/晚餐，隨後回 Airbnb。', lat: 45.5181, lng: -73.5822 },
-            
-            // Day 2: 12/24
-            { id: 6, date: '2025-12-24', time: '09:00', title: 'Jean Talon Market', cat: 'food', desc: '逛市場、吃早餐小食。', lat: 45.5362, lng: -73.6151 },
-            { id: 7, date: '2025-12-24', time: '10:30', title: 'St-Viateur Bagel', cat: 'food', desc: '品嘗著名的蒙特婁 Bagel。', lat: 45.5227, lng: -73.6020 },
-            { id: 8, date: '2025-12-24', time: '11:30', title: 'Square Saint-Louis', cat: 'spot', desc: 'Plateau 區著名漂亮建築散步。', lat: 45.5173, lng: -73.5701 },
-            { id: 9, date: '2025-12-24', time: '13:30', title: 'Biodôme & Biosphere', cat: 'spot', desc: '參觀生態展覽（建議停地下停車場）。', lat: 45.5580, lng: -73.5499 },
-            { id: 10, date: '2025-12-24', time: '16:00', title: 'Saint Joseph\'s Oratory', cat: 'spot', desc: '駕車上山欣賞教堂與夜景。', lat: 45.4924, lng: -73.6173 },
-            { id: 11, date: '2025-12-24', time: '17:30', title: 'Marché Atwater', cat: 'shop', desc: '短暫逛街買手信/Snack。', lat: 45.4791, lng: -73.5768 },
-            { id: 12, date: '2025-12-24', time: '19:00', title: 'Café Olimpico', cat: 'food', desc: '在市中心喝咖啡休息。', lat: 45.5034, lng: -73.5735 }
+            { id: 1, date: '2025-12-23', time: '06:00', title: '多倫多出發', cat: 'drive', desc: '由多倫多開車到 Montreal', lat: 43.6532, lng: -79.3832 },
+            { id: 2, date: '2025-12-23', time: '11:30', title: 'Schwartz\'s Deli', cat: 'food', desc: '地道煙肉三文治午餐', lat: 45.5163, lng: -73.5776 },
+            { id: 3, date: '2025-12-23', time: '13:30', title: 'Old Montreal 散步', cat: 'spot', desc: 'Rue Saint-Paul 歷史街道、Notre-Dame 教堂', lat: 45.5075, lng: -73.5532 },
+            { id: 4, date: '2025-12-24', time: '09:00', title: 'Jean Talon Market', cat: 'shop', desc: '市場小吃與逛街', lat: 45.5362, lng: -73.6151 },
+            { id: 5, date: '2025-12-24', time: '13:00', title: 'Montreal Biodôme', cat: 'spot', desc: '參觀生態展覽', lat: 45.5580, lng: -73.5499 }
         ],
         expenses: [],
-        todos: [
-            { id: 1, title: '準備蒙特婁停車 App (P$ Montréal)', done: false },
-            { id: 2, title: '檢查車輛玻璃水 (Winter Washer Fluid)', done: false },
-            { id: 3, title: 'Notre-Dame 門票預約', done: false }
-        ]
+        shop: [{ id: 1, title: '楓糖漿 (Maple Syrup)', price: 15, done: false }, { id: 2, title: 'St-Viateur Bagels', price: 12, done: false }],
+        todos: [{ id: 1, title: '下載 P$ Montréal 停車 App', done: false }, { id: 2, title: '預訂教廷門票', done: false }]
     };
-
-    const STORAGE_KEY = 'mtl_trip_final_v1';
 
     createApp({
         setup() {
-            const view = ref('day');
-            const tab = ref('schedule');
+            const view = ref('day'); const tab = ref('schedule');
             const selectedDate = ref('2025-12-23');
-            const days = [{ date: '2025-12-23', label: '12/23 (一)' }, { date: '2025-12-24', label: '12/24 (二)' }];
-            const rates = { HKD_VAL: 5.75 };
+            const days = ref([{ date: '2025-12-23', label: '12/23 (一)' }, { date: '2025-12-24', label: '12/24 (二)' }]);
 
-            const schedule = ref([]);
-            const expenses = ref([]);
-            const todos = ref([]);
-            const showModal = ref(false);
-            const modalType = ref('');
-            const modalMode = ref('add');
-            const form = ref({});
+            const schedule = ref([]); const expenses = ref([]); const shoppingList = ref([]); const todos = ref([]);
+            const showModal = ref(false); const modalType = ref(''); const modalMode = ref('add'); const form = ref({});
 
             const loadData = () => {
                 const stored = localStorage.getItem(STORAGE_KEY);
                 if (stored) {
                     const data = JSON.parse(stored);
-                    schedule.value = data.schedule;
-                    expenses.value = data.expenses;
-                    todos.value = data.todos;
-                } else {
-                    schedule.value = DEFAULT_DATA.schedule;
-                    expenses.value = DEFAULT_DATA.expenses;
-                    todos.value = DEFAULT_DATA.todos;
-                    save();
-                }
+                    schedule.value = data.schedule; expenses.value = data.expenses;
+                    shoppingList.value = data.shop; todos.value = data.todos;
+                } else { resetData(); }
+            };
+
+            const resetData = () => {
+                schedule.value = JSON.parse(JSON.stringify(DEFAULT_DATA.schedule));
+                expenses.value = JSON.parse(JSON.stringify(DEFAULT_DATA.expenses));
+                shoppingList.value = JSON.parse(JSON.stringify(DEFAULT_DATA.shop));
+                todos.value = JSON.parse(JSON.stringify(DEFAULT_DATA.todos));
+                save();
             };
 
             const save = () => {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                    schedule: schedule.value, expenses: expenses.value, todos: todos.value
+                    schedule: schedule.value, expenses: expenses.value, shop: shoppingList.value, todos: todos.value
                 }));
             };
 
-            const currentDayItems = computed(() => schedule.value.filter(i => i.date === selectedDate.value));
+            const currentDayItems = computed(() => schedule.value.filter(i => i.date === selectedDate.value).sort((a,b)=>a.time.localeCompare(b.time)));
             const currentDayExpenses = computed(() => expenses.value.filter(e => e.date === selectedDate.value));
             const dayTotal = computed(() => currentDayExpenses.value.reduce((sum, e) => sum + e.amount, 0));
             const allExpensesTotal = computed(() => expenses.value.reduce((sum, e) => sum + e.amount, 0));
 
-            const catName = (c) => ({ spot: '景點', food: '美食', drive: '交通', shop: '購物' }[c] || '其他');
-            const catColor = (c) => ({ spot: 'bg-indigo-50 text-indigo-600', food: 'bg-orange-50 text-orange-600', drive: 'bg-blue-50 text-blue-600', shop: 'bg-emerald-50 text-emerald-600' }[c]);
+            const catName = (c) => ({ spot: '景點', food: '美食', shop: '購物', drive: '交通' }[c] || '其他');
+            const catColor = (c) => ({ spot: 'bg-indigo-100 text-indigo-600', food: 'bg-orange-100 text-orange-600', shop: 'bg-emerald-100 text-emerald-600', drive: 'bg-blue-100 text-blue-600' }[c]);
 
-            const selectDate = (d) => { selectedDate.value = d; view.value = 'day'; nextTick(initMap); };
-            const openModal = (type) => { modalType.value = type; modalMode.value = 'add'; form.value = { id: Date.now(), date: selectedDate.value, title: '', amount: null, method: 'card' }; showModal.value = true; };
+            const selectDate = (d) => { selectedDate.value = d; view.value = 'day'; tab.value = 'schedule'; nextTick(initMap); };
+            const openModal = (type) => { modalType.value = type; modalMode.value = 'add'; form.value = { date: selectedDate.value, time: '12:00', cat: 'spot', method: 'card', title: '', amount: 0, price: 0 }; showModal.value = true; };
             const editItem = (type, item) => { modalType.value = type; modalMode.value = 'edit'; form.value = { ...item }; showModal.value = true; };
             
             const saveForm = () => {
-                if (modalType.value === 'money') {
-                    if (modalMode.value === 'edit') {
-                        const idx = expenses.value.findIndex(e => e.id === form.value.id);
-                        expenses.value[idx] = { ...form.value };
-                    } else {
-                        expenses.value.push({ ...form.value });
-                    }
+                let target = { schedule, money: expenses, shop: shoppingList, todo: todos }[modalType.value];
+                if (modalMode.value === 'edit') {
+                    const idx = target.value.findIndex(i => i.id === form.value.id);
+                    target.value[idx] = { ...form.value };
+                } else {
+                    form.value.id = Date.now();
+                    target.value.push({ ...form.value });
                 }
-                save(); showModal.value = false;
+                save(); showModal.value = false; if(modalType.value === 'schedule') nextTick(initMap);
             };
 
-            const deleteItem = () => {
-                expenses.value = expenses.value.filter(e => e.id !== form.value.id);
-                save(); showModal.value = false;
+            const deleteFromModal = () => {
+                let target = { schedule, money: expenses, shop: shoppingList, todo: todos }[modalType.value];
+                target.value = target.value.filter(i => i.id !== form.value.id);
+                save(); showModal.value = false; if(modalType.value === 'schedule') nextTick(initMap);
             };
 
-            const toggleDone = (t) => { t.done = !t.done; save(); };
+            const deleteDirectly = (id, list) => { list.splice(list.findIndex(i => i.id === id), 1); save(); };
+            const toggleDone = (item) => { item.done = !item.done; save(); };
 
             let mapInstance = null;
             const initMap = () => {
                 const containerId = 'map-' + selectedDate.value;
                 if (!document.getElementById(containerId)) return;
                 if (mapInstance) mapInstance.remove();
-                const points = currentDayItems.value;
-                mapInstance = L.map(containerId, { zoomControl: false }).setView([points[0].lat, points[0].lng], 12);
+                const points = currentDayItems.value.filter(p => p.lat && p.lng);
+                mapInstance = L.map(containerId, { zoomControl: false }).setView([points[0]?.lat || 45.5017, points[0]?.lng || -73.5673], 13);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(mapInstance);
-                points.forEach(p => L.marker([p.lat, p.lng]).addTo(mapInstance).bindPopup(p.title));
+                points.forEach(p => L.marker([p.lat, p.lng]).addTo(mapInstance));
             };
 
+            watch(() => tab.value, (n) => { if (n === 'schedule') nextTick(initMap); });
             onMounted(() => { loadData(); nextTick(initMap); });
 
-            return { view, tab, selectedDate, days, rates, schedule, expenses, todos, currentDayItems, currentDayExpenses, dayTotal, allExpensesTotal, catName, catColor, selectDate, openModal, editItem, saveForm, deleteItem, toggleDone, showModal, modalType, modalMode, form };
+            return { view, tab, selectedDate, days, schedule, expenses, shoppingList, todos, currentDayItems, currentDayExpenses, dayTotal, allExpensesTotal, catName, catColor, selectDate, openModal, editItem, saveForm, deleteFromModal, deleteDirectly, toggleDone, showModal, modalType, modalMode, form, resetData };
         }
     }).mount('#app');
 </script>
