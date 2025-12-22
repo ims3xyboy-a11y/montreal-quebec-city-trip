@@ -32,7 +32,6 @@
                 <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Road Trip Plan</p>
             </div>
             <div class="text-right">
-                <div class="text-xs font-black text-slate-700">Toronto ➔ MTL</div>
                 <div class="text-[10px] text-indigo-500 font-bold uppercase">Dec 23-24</div>
             </div>
         </div>
@@ -61,18 +60,18 @@
 
             <div class="relative space-y-4 timeline-line">
                 <div v-for="item in currentDayItems" :key="item.id" class="relative pl-12 group">
-                    <div class="absolute left-0 w-10 h-10 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center z-10 group-hover:border-indigo-400 transition-colors">
+                    <div class="absolute left-0 w-10 h-10 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center z-10">
                         <i :class="[catIcon(item.cat), 'text-xs text-slate-400']"></i>
                     </div>
                     
                     <div @click="editItem('schedule', item)" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 active:scale-[0.98] transition-all cursor-pointer">
                         <div class="flex justify-between items-start">
-                            <div>
+                            <div class="flex-1">
                                 <span class="text-[10px] font-black text-indigo-500 uppercase tracking-tighter">{{ item.time }}</span>
                                 <h3 class="font-bold text-slate-800 text-sm mt-0.5">{{ item.title }}</h3>
                             </div>
                             <a v-if="item.lat" :href="'https://www.google.com/maps/search/?api=1&query=' + item.lat + ',' + item.lng" 
-                               @click.stop target="_blank" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 active:bg-indigo-50">
+                               @click.stop target="_blank" class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 active:bg-indigo-50 ml-2">
                                 <i class="fa-solid fa-location-arrow text-[10px]"></i>
                             </a>
                         </div>
@@ -102,7 +101,7 @@
                     <div class="font-black text-slate-800 text-sm">-${{ exp.amount }}</div>
                 </div>
             </div>
-            <button @click="openModal('money')" class="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-black">+ 新增支出記錄</button>
+            <button @click="openModal('money')" class="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-black">+ 新增支出</button>
         </div>
 
         <div v-if="view !== 'todo' && tab === 'shop'" class="space-y-3">
@@ -115,89 +114,31 @@
                     </div>
                     <div>
                         <div :class="['text-sm font-bold', item.done ? 'line-through text-slate-400' : 'text-slate-700']">{{ item.title }}</div>
-                        <div class="text-[10px] text-slate-400 font-bold mt-0.5">預算: ${{ item.price || '-' }}</div>
                     </div>
                 </div>
-                <button @click.stop="editItem('shop', item)" class="text-slate-300 p-2"><i class="fas fa-ellipsis-v text-[10px]"></i></button>
              </div>
-             <button @click="openModal('shop')" class="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-black">+ 新增購物清單</button>
         </div>
 
-        <div v-if="view === 'todo'" class="space-y-6">
+        <div v-if="view === 'todo'" class="space-y-6 text-center">
             <div class="bg-indigo-600 text-white p-6 rounded-3xl shadow-xl">
-                <h3 class="font-bold mb-1 text-indigo-200 text-xs uppercase tracking-widest text-center">旅程總開支 (CAD)</h3>
-                <h2 class="text-4xl font-black tracking-tight text-center">$ {{ allExpensesTotal }}</h2>
+                <h3 class="font-bold mb-1 text-indigo-200 text-xs uppercase tracking-widest">旅程總開支 (CAD)</h3>
+                <h2 class="text-4xl font-black tracking-tight">$ {{ allExpensesTotal }}</h2>
             </div>
-
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-                <h3 class="font-black text-slate-800 mb-4 flex items-center gap-2">
-                    <span class="w-1.5 h-5 bg-orange-500 rounded-full"></span>
-                    Montreal 備忘錄
-                </h3>
-                <div class="space-y-1">
-                    <div v-for="t in todos" :key="t.id" class="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
-                        <div class="flex items-center gap-3 cursor-pointer" @click="toggleDone(t, todos)">
-                            <div :class="['w-5 h-5 rounded-lg border-2 flex items-center justify-center', t.done ? 'bg-orange-500 border-orange-500 text-white' : 'border-slate-200']">
-                                <i class="fas fa-check text-[8px]" v-if="t.done"></i>
-                            </div>
-                            <span :class="['text-sm font-medium', t.done ? 'line-through text-slate-300' : 'text-slate-600']">{{ t.title }}</span>
-                        </div>
-                        <button @click.stop="deleteDirectly(t.id, todos)" class="text-slate-200 hover:text-red-500 p-2"><i class="fas fa-trash-alt text-[10px]"></i></button>
-                    </div>
-                </div>
-                <button @click="openModal('todo')" class="w-full mt-4 py-3 rounded-xl bg-orange-50 text-orange-600 text-[10px] font-black tracking-widest">+ 新增待辦</button>
-            </div>
-            
-            <div class="text-center pt-4">
-                <button @click="resetData" class="text-red-200 text-[10px] font-bold uppercase tracking-widest underline">重置所有資料</button>
-            </div>
+            <button @click="resetData" class="text-red-200 text-[10px] font-bold uppercase tracking-widest underline">重置所有資料</button>
         </div>
     </main>
 
     <div v-if="showModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end justify-center" @click.self="showModal = false">
         <div class="bg-white w-full rounded-t-[2.5rem] p-8 shadow-2xl">
             <h3 class="font-black text-xl text-slate-800 mb-6">{{ modalMode === 'add' ? '新增項目' : '編輯詳情' }}</h3>
-            
             <div v-if="modalType === 'schedule'" class="space-y-4">
-                <div class="flex gap-3">
-                    <input v-model="form.time" type="time" class="bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none w-1/3">
-                    <select v-model="form.cat" class="bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none flex-1">
-                        <option value="spot">📸 景點</option>
-                        <option value="food">🍽️ 美食</option>
-                        <option value="drive">🚗 交通/停車</option>
-                        <option value="shop">🛍️ 購物</option>
-                    </select>
-                </div>
+                <input v-model="form.time" type="time" class="bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none w-full">
                 <input v-model="form.title" placeholder="名稱" class="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
                 <textarea v-model="form.desc" placeholder="備註..." class="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none h-24 resize-none"></textarea>
             </div>
-
-            <div v-if="modalType === 'money'" class="space-y-4">
-                <input v-model="form.title" placeholder="消費項目" class="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
-                <div class="flex gap-3">
-                    <input v-model.number="form.amount" type="number" placeholder="金額" class="flex-1 bg-slate-50 p-4 rounded-2xl text-xl font-black border-none">
-                    <select v-model="form.method" class="w-1/3 bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
-                        <option value="card">信用卡</option>
-                        <option value="cash">現金</option>
-                    </select>
-                </div>
-            </div>
-
-            <div v-if="modalType === 'shop'" class="space-y-4">
-                <input v-model="form.title" placeholder="商品" class="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
-                <input v-model.number="form.price" type="number" placeholder="預算" class="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
-            </div>
-
-            <div v-if="modalType === 'todo'" class="space-y-4">
-                <input v-model="form.title" placeholder="事項..." class="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
-            </div>
-
             <div class="flex gap-3 mt-8">
-                <button v-if="modalMode === 'edit'" @click="deleteFromModal" class="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
-                <div class="flex-1 flex gap-3">
-                    <button @click="showModal = false" class="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-sm">取消</button>
-                    <button @click="saveForm" class="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg">儲存</button>
-                </div>
+                <button @click="showModal = false" class="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black text-sm">取消</button>
+                <button @click="saveForm" class="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-lg">儲存</button>
             </div>
         </div>
     </div>
@@ -210,23 +151,22 @@
 
 <script>
     const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
-
-    const STORAGE_KEY = 'mtl_2025_final_v1';
+    const STORAGE_KEY = 'mtl_2025_trip_vfinal';
 
     const INITIAL_SCHEDULE = [
         // 23號
-        { id: 101, date: '2025-12-23', time: '04:00', title: 'Toronto 出發 🚗', cat: 'drive', desc: '4am 提早出發避開車龍', lat: 43.6532, lng: -79.3832 },
-        { id: 102, date: '2025-12-23', time: '10:00', title: 'Schwartz\'s Deli', cat: 'food', desc: '地道煙肉三文治（提早到達避開排隊）', lat: 45.5163, lng: -73.5776 },
-        { id: 103, date: '2025-12-23', time: '12:00', title: 'Old Montreal 散步', cat: 'spot', desc: '建議停好車後步行：Rue Saint-Paul E 歷史街道', lat: 45.5069, lng: -73.5524 },
-        { id: 104, date: '2025-12-23', time: '14:00', title: 'Notre-Dame Basilica', cat: 'spot', desc: '參觀哥德式教堂', lat: 45.5048, lng: -73.5561 },
-        { id: 105, date: '2025-12-23', time: '15:30', title: 'Crew Collective & Café', cat: 'food', desc: '舊銀行改建絕美咖啡廳休息', lat: 45.5023, lng: -73.5593 },
-        { id: 106, date: '2025-12-23', time: '17:00', title: 'La Grande Roue', cat: 'spot', desc: '摩天輪欣賞舊城港口景色', lat: 45.5093, lng: -73.5492 },
-        { id: 107, date: '2025-12-23', time: '19:00', title: 'Patati Patata', cat: 'food', desc: '晚餐食小食/Poutine，回 Airbnb', lat: 45.5178, lng: -73.5794 },
+        { id: 102, date: '2025-12-23', time: '10:30', title: 'Schwartz\'s Deli', cat: 'food', desc: '提早午餐避開人潮：地道煙肉三文治', lat: 45.5163, lng: -73.5776 },
+        { id: 103, date: '2025-12-23', time: '12:30', title: 'Old Montreal / Rue Saint-Paul', cat: 'spot', desc: '歷史街道逛街、攝影、散步', lat: 45.5069, lng: -73.5524 },
+        { id: 104, date: '2025-12-23', time: '14:30', title: 'Notre-Dame Basilica', cat: 'spot', desc: '參觀哥德式教堂', lat: 45.5048, lng: -73.5561 },
+        { id: 105, date: '2025-12-23', time: '16:00', title: 'Crew Collective & Café', cat: 'food', desc: '舊銀行改建絕美咖啡廳休息', lat: 45.5023, lng: -73.5593 },
+        { id: 106, date: '2025-12-23', time: '17:30', title: 'La Grande Roue', cat: 'spot', desc: '摩天輪欣賞舊城港口夕陽/夜景', lat: 45.5093, lng: -73.5492 },
+        { id: 107, date: '2025-12-23', time: '19:30', title: 'Patati Patata', cat: 'food', desc: '晚餐食小食/Poutine', lat: 45.5178, lng: -73.5794 },
+        { id: 108, date: '2025-12-23', time: '21:00', title: 'Airbnb Check-in 🏠', cat: 'drive', desc: '3808 R. Saint-Denis, Montréal, QC H2W 2M2', lat: 45.5191, lng: -73.5756 },
         
         // 24號
         { id: 201, date: '2025-12-24', time: '09:00', title: 'Jean Talon Market', cat: 'shop', desc: '早餐、逛市場', lat: 45.5362, lng: -73.6151 },
-        { id: 202, date: '2025-12-24', time: '10:30', title: 'St-Viateur Bagel', cat: 'food', desc: 'Market 附近必試地道 Bagel', lat: 45.5398, lng: -73.6111 },
-        { id: 203, date: '2025-12-24', time: '11:30', title: 'Square Saint-Louis', cat: 'spot', desc: 'Plateau 區散步攝影', lat: 45.5170, lng: -73.5702 },
+        { id: 202, date: '2025-12-24', time: '10:30', title: 'St-Viateur Bagel', cat: 'food', desc: '地道 Bagel 品嚐', lat: 45.5398, lng: -73.6111 },
+        { id: 203, date: '2025-12-24', time: '11:30', title: 'Square Saint-Louis', cat: 'spot', desc: '維多利亞式建築攝影', lat: 45.5170, lng: -73.5702 },
         { id: 204, date: '2025-12-24', time: '13:00', title: 'Montreal Biodôme', cat: 'spot', desc: '生態展覽（建議停地下停車場）', lat: 45.5580, lng: -73.5499 },
         { id: 205, date: '2025-12-24', time: '15:00', title: 'The Biosphere', cat: 'spot', desc: '步行或短途車程至生態園', lat: 45.5141, lng: -73.5315 },
         { id: 206, date: '2025-12-24', time: '16:30', title: 'Saint Joseph\'s Oratory', cat: 'spot', desc: '上山看夜景、參觀聖堂', lat: 45.4925, lng: -73.6178 },
@@ -239,7 +179,6 @@
             const view = ref('day'); const tab = ref('schedule');
             const selectedDate = ref('2025-12-23');
             const days = ref([{ date: '2025-12-23', label: '12/23 (一)' }, { date: '2025-12-24', label: '12/24 (二)' }]);
-
             const schedule = ref([]); const expenses = ref([]); const shoppingList = ref([]); const todos = ref([]);
             const showModal = ref(false); const modalType = ref(''); const modalMode = ref('add'); const form = ref({});
 
@@ -255,8 +194,8 @@
             const resetData = () => {
                 schedule.value = JSON.parse(JSON.stringify(INITIAL_SCHEDULE));
                 expenses.value = [];
-                shoppingList.value = [{id:1, title:'楓糖漿 (Maple Syrup)', price: 20, done:false}, {id:2, title:'Bagel (1 Dozen)', price:15, done:false}];
-                todos.value = [{id:1, title:'預約教廷門票', done:false}, {id:2, title:'下載 P$ Montréal 停車 App', done:false}];
+                shoppingList.value = [{id:1, title:'楓糖漿', done:false}, {id:2, title:'Bagel', done:false}];
+                todos.value = [{id:1, title:'預約教廷門票', done:false}, {id:2, title:'下載 P$ Montréal App', done:false}];
                 save();
             };
 
@@ -270,11 +209,10 @@
             const currentDayExpenses = computed(() => expenses.value.filter(e => e.date === selectedDate.value));
             const dayTotal = computed(() => currentDayExpenses.value.reduce((sum, e) => sum + e.amount, 0));
             const allExpensesTotal = computed(() => expenses.value.reduce((sum, e) => sum + e.amount, 0));
-
-            const catIcon = (c) => ({ spot: 'fas fa-camera', food: 'fas fa-utensils', shop: 'fas fa-bag-shopping', drive: 'fas fa-car' }[c] || 'fas fa-map-marker-alt');
+            const catIcon = (c) => ({ spot: 'fas fa-camera', food: 'fas fa-utensils', shop: 'fas fa-bag-shopping', drive: 'fas fa-home' }[c] || 'fas fa-map-marker-alt');
 
             const selectDate = (d) => { selectedDate.value = d; view.value = 'day'; tab.value = 'schedule'; nextTick(initMap); };
-            const openModal = (type) => { modalType.value = type; modalMode.value = 'add'; form.value = { date: selectedDate.value, time: '12:00', cat: 'spot', method: 'card', title: '', amount: 0, price: 0 }; showModal.value = true; };
+            const openModal = (type) => { modalType.value = type; modalMode.value = 'add'; form.value = { date: selectedDate.value, time: '12:00', cat: 'spot', method: 'card', title: '', amount: 0 }; showModal.value = true; };
             const editItem = (type, item) => { modalType.value = type; modalMode.value = 'edit'; form.value = { ...item }; showModal.value = true; };
             
             const saveForm = () => {
@@ -295,12 +233,6 @@
                 save(); showModal.value = false; if(modalType.value === 'schedule') nextTick(initMap);
             };
 
-            const deleteDirectly = (id, list) => { 
-                const idx = list.findIndex(i => i.id === id);
-                if (idx > -1) list.splice(idx, 1); 
-                save(); 
-            };
-            
             const toggleDone = (item) => { item.done = !item.done; save(); };
 
             let mapInstance = null;
@@ -319,7 +251,7 @@
             watch(() => tab.value, (n) => { if (n === 'schedule') nextTick(initMap); });
             onMounted(() => { loadData(); nextTick(initMap); });
 
-            return { view, tab, selectedDate, days, schedule, expenses, shoppingList, todos, currentDayItems, currentDayExpenses, dayTotal, allExpensesTotal, catIcon, selectDate, openModal, editItem, saveForm, deleteFromModal, deleteDirectly, toggleDone, showModal, modalType, modalMode, form, resetData };
+            return { view, tab, selectedDate, days, schedule, expenses, shoppingList, todos, currentDayItems, currentDayExpenses, dayTotal, allExpensesTotal, catIcon, selectDate, openModal, editItem, saveForm, deleteFromModal, toggleDone, showModal, modalType, modalMode, form, resetData };
         }
     }).mount('#app');
 </script>
