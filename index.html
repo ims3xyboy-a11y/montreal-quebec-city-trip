@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Montreal Trip 2025</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Zen Maru Gothic', sans-serif; background-color: #f8fafc; touch-action: pan-y; overscroll-behavior-y: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tab-btn.active { color: #4f46e5; border-bottom: 3px solid #4f46e5; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .leaflet-container { width: 100%; height: 100%; z-index: 1; border-radius: 1rem; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="max-w-md mx-auto min-h-screen bg-white shadow-2xl relative overflow-hidden flex flex-col">
+
+    <header class="glass sticky top-0 z-20 px-4 pt-4 pb-2 border-b border-slate-100">
+        <div class="flex justify-between items-start mb-2">
+            <div>
+                <h1 class="text-xl font-black text-slate-800 tracking-wider flex items-center gap-2">
+                    Montréal <span class="text-indigo-500 text-xs bg-indigo-100 px-2 py-0.5 rounded-full">Road Trip</span>
+                </h1>
+                <p class="text-[10px] text-slate-400 font-bold mt-1">12/23 – 12/24 · 多倫多出發</p>
+            </div>
+            <div class="text-right">
+                <div class="text-[10px] text-slate-400 font-bold">匯率參考 (CAD)</div>
+                <div class="flex flex-col items-end">
+                    <span class="text-xs font-bold text-indigo-600">1 CAD ≈ {{ rates.HKD_VAL }} HKD</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex space-x-2 overflow-x-auto no-scrollbar pb-1">
+            <button @click="view = 'todo'" :class="['flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all', view === 'todo' ? 'bg-slate-800 text-white shadow-lg' : 'bg-slate-100 text-slate-500']">概覽</button>
+            <button v-for="d in days" :key="d.date" @click="selectDate(d.date)"
+                    :class="['flex-shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all', selectedDate === d.date && view !== 'todo' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 text-slate-500']">
+                {{ d.label }}
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-4 pb-24">
+        
+        <div v-if="view !== 'todo'" class="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 rounded-2xl mb-5 flex justify-between items-center shadow-lg text-white">
+            <div>
+                <div class="text-3xl font-black">-6°C</div>
+                <div class="text-xs font-bold mt-1"><i class="fas fa-snowflake mr-1"></i> 蒙特婁冬季</div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs opacity-80">體感 -11°C</div>
+                <div class="text-[10px] opacity-70">路面可能有積雪，注意駕駛</div>
+            </div>
+        </div>
+
+        <div class="flex border-b border-slate-100 mb-4 sticky top-0 bg-white z-10" v-if="view !== 'todo'">
+            <button @click="tab = 'schedule'" :class="['tab-btn flex-1 py-2 text-xs font-bold', tab === 'schedule' ? 'active' : 'text-slate-400']">行程</button>
+            <button @click="tab = 'money'" :class="['tab-btn flex-1 py-2 text-xs font-bold', tab === 'money' ? 'active' : 'text-slate-400']">記帳</button>
+            <button @click="tab = 'shop'" :class="['tab-btn flex-1 py-2 text-xs font-bold', tab === 'shop' ? 'active' : 'text-slate-400']">清單</button>
+        </div>
+
+        <div v-if="view !== 'todo' && tab === 'schedule'" class="space-y-4">
+            <div class="h-40 bg-slate-100 rounded-2xl overflow-hidden shadow-inner border border-slate-200 relative">
+                <div :id="'map-' + selectedDate" class="leaflet-container"></div>
+            </div>
+
+            <div class="space-y-3">
+                <div v-for="item in currentDayItems" :key="item.id" @click="editItem('schedule', item)"
+                     class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex gap-3 relative group">
+                    <div class="flex flex-col items-center min-w-[40px]">
+                        <span class="text-xs font-black text-slate-400">{{ item.time }}</span>
+                        <div class="h-full w-0.5 bg-slate-100 my-1 rounded-full"></div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-slate-800 text-sm">{{ item.title }}</h3>
+                            <span :class="['text-[10px] px-1.5 py-0.5 rounded font-bold', catColor(item.cat)]">{{ catName(item.cat) }}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">{{ item.desc }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="view !== 'todo' && tab === 'money'" class="space-y-4">
+            <div class="bg-slate-900 text-white p-5 rounded-2xl shadow-xl">
+                <p class="text-xs text-slate-400 mb-1">本日支出 (CAD)</p>
+                <h2 class="text-3xl font-black">$ {{ dayTotal }}</h2>
+                <div class="mt-3 pt-3 border-t border-slate-700">
+                    <p class="text-[10px] text-slate-400">約合 HKD</p>
+                    <p class="font-bold text-indigo-400">$ {{ (dayTotal * rates.HKD_VAL).toFixed(0) }}</p>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <div v-for="exp in currentDayExpenses" :key="exp.id" @click="editItem('money', exp)"
+                     class="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs', exp.method === 'card' ? 'bg-purple-100 text-purple-600' : 'bg-green-100 text-green-600']">
+                            <i :class="exp.method === 'card' ? 'fas fa-credit-card' : 'fas fa-money-bill'"></i>
+                        </div>
+                        <span class="font-bold text-slate-700 text-sm">{{ exp.title }}</span>
+                    </div>
+                    <div class="font-black text-slate-800 text-sm">-${{ exp.amount }}</div>
+                </div>
+            </div>
+            <button @click="openModal('money')" class="w-full py-3 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-bold">+ 新增支出</button>
+        </div>
+
+        <div v-if="view === 'todo'" class="space-y-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-3 border-l-4 border-indigo-500 pl-2">總支出概覽</h3>
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="text-slate-500">總計 (CAD)</span>
+                    <span class="font-black text-slate-700">$ {{ allExpensesTotal }}</span>
+                </div>
+                <div class="flex justify-between text-xs">
+                    <span class="text-slate-500">約合 HKD</span>
+                    <span class="font-bold text-indigo-600">$ {{ (allExpensesTotal * rates.HKD_VAL).toFixed(0) }}</span>
+                </div>
+            </div>
+            
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-3 border-l-4 border-orange-500 pl-2">行前待辦</h3>
+                <div v-for="t in todos" :key="t.id" class="flex justify-between items-center py-3 border-b border-slate-50">
+                    <div class="flex items-center gap-3 cursor-pointer" @click="toggleDone(t, todos)">
+                        <i :class="['fas fa-check-circle', t.done ? 'text-green-500' : 'text-slate-200']"></i>
+                        <span :class="['text-sm', t.done ? 'line-through text-slate-300' : 'text-slate-600']">{{ t.title }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <button v-if="view !== 'todo' && tab === 'schedule'" @click="openModal('schedule')" 
+            class="absolute bottom-24 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl flex items-center justify-center z-30 active:scale-90 transition">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <div v-if="showModal" class="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end justify-center" @click.self="showModal = false">
+        <div class="bg-white w-full rounded-t-3xl p-6 shadow-2xl animate-slide-up">
+            <h3 class="font-black text-lg mb-4">{{ modalMode === 'add' ? '新增' : '編輯' }}項目</h3>
+            <div v-if="modalType === 'schedule'" class="space-y-3">
+                <div class="flex gap-2">
+                    <input v-model="form.time" type="time" class="bg-slate-50 p-3 rounded-xl text-sm w-1/3 border-none">
+                    <select v-model="form.cat" class="bg-slate-50 p-3 rounded-xl text-sm flex-1 border-none">
+                        <option value="spot">📍 景點</option>
+                        <option value="food">🍴 美食</option>
+                        <option value="drive">🚗 交通</option>
+                    </select>
+                </div>
+                <input v-model="form.title" placeholder="地點/標題" class="w-full bg-slate-50 p-3 rounded-xl text-sm border-none">
+                <textarea v-model="form.desc" placeholder="備註..." class="w-full bg-slate-50 p-3 rounded-xl text-sm h-20 border-none"></textarea>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button @click="showModal = false" class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold">取消</button>
+                <button @click="saveForm" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold">儲存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+    const DEFAULT_DATA = {
+        schedule: [
+            { id: 1, date: '2025-12-23', time: '04:30', title: 'Toronto 出發', cat: 'drive', desc: '清晨出發開往 Montreal，約 5.5 小時車程', lat: 43.6532, lng: -79.3832 },
+            { id: 2, date: '2025-12-23', time: '11:30', title: 'Jean-Talon Market', cat: 'food', desc: '午餐與逛逛當地著名市場', lat: 45.5362, lng: -73.6151 },
+            { id: 3, date: '2025-12-23', time: '14:00', title: 'Montreal Biodôme', cat: 'spot', desc: '室內生態館，適合避寒', lat: 45.5580, lng: -73.5499 },
+            { id: 4, date: '2025-12-23', time: '16:30', title: '3808 R. Saint-Denis', cat: 'spot', desc: '住宿 Check-in 並探索聖丹尼斯街', lat: 45.5204, lng: -73.5768 },
+            { id: 5, date: '2025-12-24', time: '10:00', title: 'Montreal Biosphere', cat: 'spot', desc: '聖海倫島著名球體建築', lat: 45.5139, lng: -73.5315 },
+            { id: 6, date: '2025-12-24', time: '13:00', title: 'Old Montreal & Old Port', desc: '漫步舊城區感受聖誕氛圍', cat: 'spot', lat: 45.5075, lng: -73.5532 },
+            { id: 7, date: '2025-12-24', time: '15:30', title: 'La Grande Roue', cat: 'spot', desc: '乘坐摩天輪欣賞雪景與市區', lat: 45.5094, lng: -73.5492 }
+        ],
+        expenses: [
+            { id: 1, date: '2025-12-23', title: '油費', amount: 80, method: 'card' },
+            { id: 2, date: '2025-12-23', title: '市場午餐', amount: 35, method: 'cash' }
+        ],
+        shop: [],
+        todos: [
+            { id: 1, title: '檢查車輛雪胎與油量', done: false },
+            { id: 2, title: '下載離線地圖 (QEW/Hwy 401)', done: false },
+            { id: 3, title: '準備蒙特婁室內停車資訊', done: false }
+        ]
+    };
+
+    const STORAGE_KEY = 'montreal_trip_v1';
+
+    createApp({
+        setup() {
+            const view = ref('schedule');
+            const tab = ref('schedule');
+            const selectedDate = ref('2025-12-23');
+            const days = ref([
+                { date: '2025-12-23', label: '12/23' },
+                { date: '2025-12-24', label: '12/24' }
+            ]);
+            const rates = ref({ HKD_VAL: 5.75 }); // 1 CAD ≈ 5.75 HKD (預計值)
+
+            const schedule = ref([]);
+            const expenses = ref([]);
+            const shoppingList = ref([]);
+            const todos = ref([]);
+            const showModal = ref(false);
+            const modalType = ref('');
+            const modalMode = ref('add');
+            const form = ref({});
+
+            const loadData = () => {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    schedule.value = data.schedule;
+                    expenses.value = data.expenses;
+                    shoppingList.value = data.shop || [];
+                    todos.value = data.todos;
+                } else {
+                    resetData();
+                }
+            };
+
+            const resetData = () => {
+                schedule.value = JSON.parse(JSON.stringify(DEFAULT_DATA.schedule));
+                expenses.value = JSON.parse(JSON.stringify(DEFAULT_DATA.expenses));
+                shoppingList.value = [];
+                todos.value = JSON.parse(JSON.stringify(DEFAULT_DATA.todos));
+                save();
+            };
+
+            const save = () => {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    schedule: schedule.value,
+                    expenses: expenses.value,
+                    shop: shoppingList.value,
+                    todos: todos.value
+                }));
+            };
+
+            const currentDayItems = computed(() => schedule.value.filter(i => i.date === selectedDate.value).sort((a,b)=>a.time.localeCompare(b.time)));
+            const currentDayExpenses = computed(() => expenses.value.filter(e => e.date === selectedDate.value));
+            const dayTotal = computed(() => currentDayExpenses.value.reduce((sum, e) => sum + e.amount, 0));
+            const allExpensesTotal = computed(() => expenses.value.reduce((sum, e) => sum + e.amount, 0));
+
+            const catName = (c) => ({ spot: '景點', food: '美食', drive: '交通' }[c] || '其他');
+            const catColor = (c) => ({ spot: 'bg-indigo-100 text-indigo-600', food: 'bg-orange-100 text-orange-600', drive: 'bg-blue-100 text-blue-600' }[c]);
+
+            const selectDate = (d) => {
+                selectedDate.value = d;
+                view.value = 'day';
+                nextTick(initMap);
+            };
+
+            const openModal = (type) => {
+                modalType.value = type;
+                modalMode.value = 'add';
+                form.value = { id: Date.now(), date: selectedDate.value, time: '12:00', cat: 'spot', title: '', amount: 0, method: 'card' };
+                showModal.value = true;
+            };
+
+            const editItem = (type, item) => {
+                modalType.value = type;
+                modalMode.value = 'edit';
+                form.value = { ...item };
+                showModal.value = true;
+            };
+
+            const saveForm = () => {
+                let list = modalType.value === 'schedule' ? schedule : expenses;
+                if (modalMode.value === 'edit') {
+                    const idx = list.value.findIndex(i => i.id === form.value.id);
+                    list.value[idx] = { ...form.value };
+                } else {
+                    list.value.push({ ...form.value });
+                }
+                save();
+                showModal.value = false;
+                nextTick(initMap);
+            };
+
+            const toggleDone = (item) => { item.done = !item.done; save(); };
+
+            let mapInstance = null;
+            const initMap = () => {
+                const containerId = 'map-' + selectedDate.value;
+                if (!document.getElementById(containerId)) return;
+                if (mapInstance) { mapInstance.remove(); }
+                
+                const points = currentDayItems.value.filter(i => i.lat);
+                const startPos = points.length ? [points[0].lat, points[0].lng] : [45.5017, -73.5673];
+                
+                mapInstance = L.map(containerId, { zoomControl: false }).setView(startPos, 12);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(mapInstance);
+                
+                points.forEach(p => {
+                    L.marker([p.lat, p.lng]).addTo(mapInstance).bindPopup(p.title);
+                });
+            };
+
+            onMounted(() => { loadData(); nextTick(initMap); });
+
+            return { view, tab, selectedDate, days, rates, schedule, expenses, shoppingList, todos, currentDayItems, currentDayExpenses, dayTotal, allExpensesTotal, catName, catColor, selectDate, openModal, editItem, saveForm, toggleDone, showModal, modalType, modalMode, form, resetData };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
