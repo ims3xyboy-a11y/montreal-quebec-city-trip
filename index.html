@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QC-MTL Winter Trip 2025</title>
+    <title>QC-MTL Road Trip 2025</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +19,8 @@
         .leaflet-container { width: 100%; height: 100%; z-index: 1; border-radius: 1.5rem; }
         .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); }
         .timeline-line::before { content: ''; position: absolute; left: 19px; top: 10px; bottom: 10px; width: 2px; background: #f1f5f9; }
+        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -48,8 +50,8 @@
     <main class="flex-1 overflow-y-auto p-5 pb-24">
         
         <div class="flex border-b border-slate-100 mb-6 sticky top-0 bg-white z-10" v-if="view !== 'todo'">
-            <button @click="tab = 'schedule'" :class="['tab-btn flex-1 py-3 text-sm font-bold', tab === 'schedule' ? 'active' : 'text-slate-400']">行程</button>
-            <button @click="tab = 'money'" :class="['tab-btn flex-1 py-3 text-sm font-bold', tab === 'money' ? 'active' : 'text-slate-400']">開支</button>
+            <button @click="tab = 'schedule'" :class="['tab-btn flex-1 py-3 text-sm font-bold', tab === 'schedule' ? 'active' : 'text-slate-400']">行程安排</button>
+            <button @click="tab = 'money'" :class="['tab-btn flex-1 py-3 text-sm font-bold', tab === 'money' ? 'active' : 'text-slate-400']">開支記錄</button>
         </div>
 
         <div v-if="view !== 'todo' && tab === 'schedule'" class="space-y-6">
@@ -82,7 +84,7 @@
 
         <div v-if="view !== 'todo' && tab === 'money'" class="space-y-4">
             <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-xl text-center">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">今日預計支出</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">今日支出</p>
                 <h2 class="text-4xl font-black tracking-tight">$ {{ dayTotal }} <span class="text-xs font-normal">CAD</span></h2>
             </div>
             <div class="space-y-2">
@@ -97,19 +99,19 @@
                     <div class="font-black text-slate-800 text-sm">-${{ exp.amount }}</div>
                 </div>
             </div>
-            <button @click="openModal('money')" class="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-black">+ 新增開支記錄</button>
+            <button @click="openModal('money')" class="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 text-xs font-black">+ 新增開支</button>
         </div>
 
         <div v-if="view === 'todo'" class="space-y-6">
             <div class="bg-indigo-600 text-white p-6 rounded-3xl shadow-xl text-center">
-                <h3 class="font-bold mb-1 text-indigo-200 text-xs uppercase tracking-widest">旅程總預算 (CAD)</h3>
+                <h3 class="font-bold mb-1 text-indigo-200 text-xs uppercase tracking-widest">旅程預算總計 (CAD)</h3>
                 <h2 class="text-4xl font-black tracking-tight">$ {{ allExpensesTotal }}</h2>
             </div>
 
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <h3 class="font-black text-slate-800 mb-4 flex items-center gap-2">
                     <span class="w-1.5 h-5 bg-orange-500 rounded-full"></span>
-                    重要提醒
+                    Quebec Winter 小貼士
                 </h3>
                 <div class="space-y-3">
                     <div v-for="t in todos" :key="t.id" class="flex items-start gap-3 cursor-pointer" @click="toggleDone(t, todos)">
@@ -147,55 +149,36 @@
         </div>
     </div>
 
-    <button v-if="view !== 'todo' && tab === 'schedule'" @click="openModal('schedule')" class="fixed bottom-8 right-8 w-14 h-14 bg-slate-900 text-white rounded-[20px] shadow-2xl flex items-center justify-center z-30">
-        <i class="fas fa-plus text-lg"></i>
-    </button>
-
 </div>
 
 <script>
     const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
-    const STORAGE_KEY = 'mtl_qc_2025_trip';
+    const STORAGE_KEY = 'mtl_qc_2025_vfinal_rev';
 
     const INITIAL_SCHEDULE = [
         // 23號 Montreal
-        { id: 102, date: '2025-12-23', time: '10:30', title: 'Schwartz\'s Deli', cat: 'food', desc: '提早午餐避人潮：煙肉三文治', lat: 45.5163, lng: -73.5776 },
-        { id: 103, date: '2025-12-23', time: '12:30', title: 'Old Montreal 散步', cat: 'spot', desc: 'Rue Saint-Paul E 歷史街道', lat: 45.5069, lng: -73.5524 },
-        { id: 104, date: '2025-12-23', time: '14:30', title: 'Notre-Dame Basilica', cat: 'spot', desc: '參觀哥德式教堂', lat: 45.5048, lng: -73.5561 },
-        { id: 105, date: '2025-12-23', time: '16:00', title: 'Crew Collective & Café', cat: 'food', desc: '舊銀行改建咖啡廳休息', lat: 45.5023, lng: -73.5593 },
-        { id: 106, date: '2025-12-23', time: '17:30', title: 'La Grande Roue', cat: 'spot', desc: '摩天輪欣賞舊城景色', lat: 45.5093, lng: -73.5492 },
-        { id: 107, date: '2025-12-23', time: '19:30', title: 'Patati Patata', cat: 'food', desc: '晚餐食小食/Poutine', lat: 45.5178, lng: -73.5794 },
+        { id: 102, date: '2025-12-23', time: '10:30', title: 'Schwartz\'s Deli', cat: 'food', desc: '地道煙肉三文治', lat: 45.5163, lng: -73.5776 },
         { id: 108, date: '2025-12-23', time: '21:00', title: 'Montreal Airbnb', cat: 'drive', desc: '3808 R. Saint-Denis', lat: 45.5191, lng: -73.5756 },
 
-        // 24號 Montreal
-        { id: 201, date: '2025-12-24', time: '09:00', title: 'Jean Talon Market', cat: 'spot', desc: '早餐、逛市場小吃', lat: 45.5362, lng: -73.6151 },
-        { id: 202, date: '2025-12-24', time: '10:30', title: 'St-Viateur Bagel', cat: 'food', desc: '地道 Montreal Bagel', lat: 45.5398, lng: -73.6111 },
-        { id: 203, date: '2025-12-24', time: '11:30', title: 'Square Saint-Louis', cat: 'spot', desc: 'Plateau 區散步攝影', lat: 45.5170, lng: -73.5702 },
-        { id: 204, date: '2025-12-24', time: '13:00', title: 'Montreal Biodôme', cat: 'spot', desc: '生態展覽', lat: 45.5580, lng: -73.5499 },
-        { id: 205, date: '2025-12-24', time: '15:00', title: 'The Biosphere', cat: 'spot', desc: '生態園球體拍攝', lat: 45.5141, lng: -73.5315 },
-        { id: 206, date: '2025-12-24', time: '16:30', title: 'Saint Joseph\'s Oratory', cat: 'spot', desc: '上山看夜景、參觀聖堂', lat: 45.4925, lng: -73.6178 },
-        { id: 207, date: '2025-12-24', time: '18:00', title: 'Marché Atwater', cat: 'spot', desc: '買手信/小吃', lat: 45.4795, lng: -73.5768 },
-        { id: 208, date: '2025-12-24', time: '20:00', title: 'Café Olimpico', cat: 'food', desc: '市中心咖啡休息', lat: 45.5034, lng: -73.5705 },
-
         // 25號 Quebec City
-        { id: 301, date: '2025-12-25', time: '09:30', title: '抵達 Old Quebec', cat: 'drive', desc: '建議停 Dufferin Terrace 或舊城地下停車場', lat: 46.8119, lng: -71.2052 },
-        { id: 302, date: '2025-12-25', time: '09:45', title: 'L’OMELETTE 早餐', cat: 'food', desc: 'Walk-in 經濟早餐 ($10-15)', lat: 46.8123, lng: -71.2038 },
-        { id: 303, date: '2025-12-25', time: '10:15', title: 'Toboggan Slide', cat: 'spot', desc: 'Dufferin Terrace 現場買票\n拍 Château Frontenac 全景', lat: 46.8115, lng: -71.2050 },
-        { id: 304, date: '2025-12-25', time: '12:15', title: 'Le Casse-Crêpe Breton', cat: 'food', desc: '午餐：法式薄餅 ($12-20)', lat: 46.8125, lng: -71.2091 },
-        { id: 305, date: '2025-12-25', time: '13:15', title: 'Old Quebec 步行遊覽', cat: 'spot', desc: 'Place Royale, Petit-Champlain,\n壁畫, 魁北克聖母聖殿主教座堂', lat: 46.8122, lng: -71.2019 },
-        { id: 306, date: '2025-12-25', time: '15:30', title: 'Pierre-Dugua-De-Mons Terrace', cat: 'spot', desc: '拍攝聖勞倫斯河雪景', lat: 46.8085, lng: -71.2065 },
-        { id: 307, date: '2025-12-25', time: '16:00', title: 'Petit-Champlain 夜景', cat: 'spot', desc: '再逛逛夜景或喝杯熱咖啡', lat: 46.8121, lng: -71.2031 },
-        { id: 308, date: '2025-12-25', time: '17:00', title: 'QC Airbnb Check-in', cat: 'drive', desc: '208 Route Kennedy, Lévis', lat: 46.8005, lng: -71.1685 },
-        { id: 309, date: '2025-12-25', time: '19:00', title: '晚餐：Cochon Dingue / Bistro Le Clan', cat: 'food', desc: 'Walk-in 晚餐 ($15-25)', lat: 46.8126, lng: -71.2034 },
+        { id: 301, date: '2025-12-25', time: '06:00', title: 'Montreal 出發 🚗', cat: 'drive', desc: '車程約 3 小時，可在車上簡單吃早餐', lat: 45.5017, lng: -73.5673 },
+        { id: 302, date: '2025-12-25', time: '09:30', title: '抵達 Old Quebec', cat: 'drive', desc: '停車：Dufferin Terrace 或舊城地下停車場', lat: 46.8119, lng: -71.2052 },
+        { id: 303, date: '2025-12-25', time: '09:45', title: 'L’OMELETTE 早餐', cat: 'food', desc: 'Walk-in 經濟早餐 ($10-15)', lat: 46.8123, lng: -71.2038 },
+        { id: 304, date: '2025-12-25', time: '10:15', title: 'Toboggan Slide', cat: 'spot', desc: 'Dufferin Terrace 現場買票\n拍芳堤娜城堡飯店景色', lat: 46.8115, lng: -71.2050 },
+        { id: 305, date: '2025-12-25', time: '12:15', title: 'Le Casse-Crêpe Breton', cat: 'food', desc: '午餐：鹹/甜薄餅 ($12-20)', lat: 46.8125, lng: -71.2091 },
+        { id: 306, date: '2025-12-25', time: '13:15', title: 'Old Quebec 步行遊覽', cat: 'spot', desc: '一次走完：小尚普蘭街、皇家廣場、大壁畫、聖母大教堂、城門拍照', lat: 46.8122, lng: -71.2019 },
+        { id: 307, date: '2025-12-25', time: '16:00', title: '夜景與咖啡時間', cat: 'spot', desc: 'Pierre-Dugua-De-Mons Terrace 拍雪景\n逛 Petit-Champlain 夜景', lat: 46.8121, lng: -71.2031 },
+        { id: 308, date: '2025-12-25', time: '17:00', title: 'Old Quebec 晚餐', cat: 'food', desc: 'Cochon Dingue / Bistro Le Clan\n先吃晚餐再回酒店', lat: 46.8126, lng: -71.2034 },
+        { id: 309, date: '2025-12-25', time: '18:15', title: 'Repotel Levis Check-in 🏠', cat: 'drive', desc: '208 Route Kennedy, Lévis', lat: 46.8005, lng: -71.1685 },
 
         // 26號 Quebec City -> Toronto
-        { id: 401, date: '2025-12-26', time: '08:30', title: '早餐時間', cat: 'food', desc: 'Airbnb 自備或回舊城食 L’OMELETTE', lat: 46.8123, lng: -71.2038 },
-        { id: 402, date: '2025-12-26', time: '09:00', title: '離開 Lévis 前往滑雪場', cat: 'drive', desc: '車程約 25-30 分鐘', lat: 46.8005, lng: -71.1685 },
-        { id: 403, date: '2025-12-26', time: '10:30', title: 'Dog Sled Check-in', cat: 'spot', desc: '33 Chemin de la Coulée, Lac-Beauport\n穿戴保暖防水衣物', lat: 46.9463, lng: -71.2952 },
-        { id: 404, date: '2025-12-26', time: '11:00', title: 'Dog Sled Ride 🐕', cat: 'spot', desc: '一小時狗拉雪橇體驗', lat: 46.9463, lng: -71.2952 },
-        { id: 405, date: '2025-12-26', time: '12:15', title: '午餐 / 輕食', cat: 'food', desc: 'Café du Monde 或附近咖啡店 ($8-15)', lat: 46.8155, lng: -71.2015 },
-        { id: 406, date: '2025-12-26', time: '13:15', title: 'Village Vacances Valcartier', cat: 'spot', desc: '滑道雪地活動替代行程', lat: 46.9248, lng: -71.4815 },
-        { id: 407, date: '2025-12-26', time: '15:30', title: '啟程返多倫多 🚗', cat: 'drive', desc: '車程約 7 小時，建議中途休息', lat: 46.9248, lng: -71.4815 }
+        { id: 401, date: '2025-12-26', time: '08:30', title: '早餐時間', cat: 'food', desc: '酒店附近或 L’OMELETTE', lat: 46.8123, lng: -71.2038 },
+        { id: 402, date: '2025-12-26', time: '09:00', title: '離開酒店', cat: 'drive', desc: '前往 Lac-Beauport (車程 30min)', lat: 46.8005, lng: -71.1685 },
+        { id: 403, date: '2025-12-26', time: '10:30', title: 'Dog Sled Check-in', cat: 'spot', desc: '33 Chemin de la Coulée\n穿保暖防水衣物', lat: 46.9463, lng: -71.2952 },
+        { id: 404, date: '2025-12-26', time: '11:00', title: 'Dog Sled Ride 🐕', cat: 'spot', desc: '1小時體驗', lat: 46.9463, lng: -71.2952 },
+        { id: 405, date: '2025-12-26', time: '12:15', title: '午餐', cat: 'food', desc: '附近咖啡店或 Café du Monde', lat: 46.8155, lng: -71.2015 },
+        { id: 406, date: '2025-12-26', time: '13:15', title: '亞伯拉罕平原 Plaines d’Abraham', cat: 'spot', desc: '欣賞雪景、歷史雕像、炮台', lat: 46.8016, lng: -71.2215 },
+        { id: 407, date: '2025-12-26', time: '15:00', title: '返多倫多 🚗', cat: 'drive', desc: '車程約 7 小時，建議中途休息', lat: 46.8016, lng: -71.2215 }
     ];
 
     createApp({
@@ -203,10 +186,8 @@
             const view = ref('day'); const tab = ref('schedule');
             const selectedDate = ref('2025-12-23');
             const days = ref([
-                { date: '2025-12-23', label: '12/23 (一)' }, 
-                { date: '2025-12-24', label: '12/24 (二)' },
-                { date: '2025-12-25', label: '12/25 (四)' },
-                { date: '2025-12-26', label: '12/26 (五)' }
+                { date: '2025-12-23', label: '12/23 (一)' }, { date: '2025-12-24', label: '12/24 (二)' },
+                { date: '2025-12-25', label: '12/25 (四)' }, { date: '2025-12-26', label: '12/26 (五)' }
             ]);
             const schedule = ref([]); const expenses = ref([]); const todos = ref([]);
             const showModal = ref(false); const modalType = ref(''); const modalMode = ref('add'); const form = ref({});
@@ -223,9 +204,10 @@
                 schedule.value = JSON.parse(JSON.stringify(INITIAL_SCHEDULE));
                 expenses.value = [];
                 todos.value = [
-                    {id:1, title:'穿戴保暖防水衣物 (滑道/狗拉雪橇用)', done:false},
-                    {id:2, title:'下載 P$ Montréal 停車 App', done:false},
-                    {id:3, title:'檢查 26 號狗拉雪橇預約確認', done:false}
+                    {id:1, title:'Toboggan Slide 早上玩，walk-in 最穩', done:false},
+                    {id:2, title:'25號晚餐先吃再回 Repotel Levis', done:false},
+                    {id:3, title:'冬季路面冰滑，開車注意', done:false},
+                    {id:4, title:'亞伯拉罕平原預留 1 小時拍照', done:false}
                 ];
                 save();
             };
@@ -264,12 +246,6 @@
                 save(); showModal.value = false; if(modalType.value === 'schedule') nextTick(initMap);
             };
 
-            const deleteDirectly = (id, list) => { 
-                const idx = list.findIndex(i => i.id === id);
-                if (idx > -1) list.splice(idx, 1); 
-                save(); 
-            };
-            
             const toggleDone = (item) => { item.done = !item.done; save(); };
 
             let mapInstance = null;
@@ -288,7 +264,7 @@
             watch(() => tab.value, (n) => { if (n === 'schedule') nextTick(initMap); });
             onMounted(() => { loadData(); nextTick(initMap); });
 
-            return { view, tab, selectedDate, days, schedule, expenses, todos, currentDayItems, currentDayExpenses, dayTotal, allExpensesTotal, catIcon, selectDate, openModal, editItem, saveForm, deleteFromModal, deleteDirectly, toggleDone, showModal, modalType, modalMode, form, resetData };
+            return { view, tab, selectedDate, days, schedule, expenses, todos, currentDayItems, currentDayExpenses, dayTotal, allExpensesTotal, catIcon, selectDate, openModal, editItem, saveForm, deleteFromModal, toggleDone, showModal, modalType, modalMode, form, resetData };
         }
     }).mount('#app');
 </script>
