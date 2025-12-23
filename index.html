@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>QC-MTL Winter Trip 2025</title>
+    <title>QC-MTL Winter Roadtrip 2025</title>
     
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -101,18 +101,27 @@
         </div>
 
         <div v-if="view === 'todo'" class="space-y-6">
-            <div class="bg-indigo-600 text-white p-6 rounded-3xl shadow-xl text-center">
-                <h3 class="font-bold mb-1 text-indigo-200 text-xs uppercase tracking-widest">旅程總預算 (CAD)</h3>
-                <h2 class="text-4xl font-black tracking-tight">$ {{ allExpensesTotal }}</h2>
+            <div class="bg-indigo-600 text-white p-6 rounded-3xl shadow-xl">
+                <h3 class="font-bold mb-3 text-indigo-200 text-xs uppercase tracking-widest">住宿資訊</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="pb-2 border-b border-indigo-400/30">
+                        <p class="font-black">Montreal (23-25)</p>
+                        <p class="text-indigo-100 text-xs">3808 Rue Saint-Denis, Montreal, QC H2W 2M2</p>
+                    </div>
+                    <div>
+                        <p class="font-black">Quebec City (25-26)</p>
+                        <p class="text-indigo-100 text-xs">208 Route Kennedy, Lévis, QC G6V 9J6</p>
+                    </div>
+                </div>
             </div>
 
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                 <h3 class="font-black text-slate-800 mb-4 flex items-center gap-2">
                     <span class="w-1.5 h-5 bg-orange-500 rounded-full"></span>
-                    重要提醒
+                    重要提醒 & 貼士
                 </h3>
                 <div class="space-y-3">
-                    <div v-for="t in todos" :key="t.id" class="flex items-start gap-3 cursor-pointer" @click="toggleDone(t, todos)">
+                    <div v-for="t in todos" :key="t.id" class="flex items-start gap-3 cursor-pointer" @click="toggleDone(t)">
                         <div :class="['w-5 h-5 rounded-lg border-2 mt-0.5 flex items-center justify-center flex-shrink-0', t.done ? 'bg-orange-500 border-orange-500 text-white' : 'border-slate-200']">
                             <i class="fas fa-check text-[8px]" v-if="t.done"></i>
                         </div>
@@ -121,7 +130,7 @@
                 </div>
             </div>
             
-            <button @click="resetData" class="w-full text-red-200 text-[10px] font-bold uppercase tracking-widest underline py-4">重置所有資料</button>
+            <button @click="resetData" class="w-full text-red-200 text-[10px] font-bold uppercase tracking-widest underline py-4">重置行程資料</button>
         </div>
     </main>
 
@@ -130,12 +139,12 @@
             <h3 class="font-black text-xl text-slate-800 mb-6">{{ modalMode === 'add' ? '新增項目' : '編輯詳情' }}</h3>
             <div v-if="modalType === 'schedule'" class="space-y-4">
                 <input v-model="form.time" type="time" class="bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none w-full">
-                <input v-model="form.title" placeholder="名稱" class="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
-                <textarea v-model="form.desc" placeholder="備註..." class="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none h-24 resize-none"></textarea>
+                <input v-model="form.title" placeholder="項目名稱" class="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
+                <textarea v-model="form.desc" placeholder="備註內容..." class="w-full bg-slate-50 p-4 rounded-2xl text-sm border-none h-24 resize-none"></textarea>
             </div>
             <div v-if="modalType === 'money'" class="space-y-4">
-                <input v-model="form.title" placeholder="項目" class="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
-                <input v-model.number="form.amount" type="number" placeholder="金額" class="w-full bg-slate-50 p-4 rounded-2xl text-xl font-black border-none">
+                <input v-model="form.title" placeholder="支出項目" class="w-full bg-slate-50 p-4 rounded-2xl text-sm font-bold border-none">
+                <input v-model.number="form.amount" type="number" placeholder="金額 (CAD)" class="w-full bg-slate-50 p-4 rounded-2xl text-xl font-black border-none">
             </div>
             <div class="flex gap-3 mt-8">
                 <button v-if="modalMode === 'edit'" @click="deleteFromModal" class="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
@@ -155,31 +164,41 @@
 
 <script>
     const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
-    const STORAGE_KEY = 'roadtrip_2025_v2';
+    const STORAGE_KEY = 'mtl_qc_trip_2025_full';
 
     const INITIAL_SCHEDULE = [
-        // 12/23 Montreal Day 1
-        { id: 101, date: '2025-12-23', time: '11:00', title: 'Schwartz\'s Deli', cat: 'food', desc: '蒙特婁必吃煙燻肉三文治', lat: 45.5163, lng: -73.5776 },
-        { id: 102, date: '2025-12-23', time: '13:30', title: 'Old Montreal 舊城散步', cat: 'spot', desc: '聖保羅街 (Rue Saint-Paul) 歷史建築', lat: 45.5069, lng: -73.5524 },
-        { id: 103, date: '2025-12-23', time: '15:00', title: 'Notre-Dame Basilica', cat: 'spot', desc: '聖母大教堂參觀 (Aura 燈光秀需預約)', lat: 45.5048, lng: -73.5561 },
-        { id: 104, date: '2025-12-23', time: '20:00', title: 'Montreal Airbnb', cat: 'drive', desc: '入住休息 (3808 R. Saint-Denis)', lat: 45.5191, lng: -73.5756 },
+        // Day 1: 12/23
+        { id: 101, date: '2025-12-23', time: '10:30', title: '抵達 Montreal 市區', cat: 'drive', desc: '由多倫多抵達，於市區尋找停車位', lat: 45.5017, lng: -73.5673 },
+        { id: 102, date: '2025-12-23', time: '11:00', title: 'Brunch: 市區咖啡店', cat: 'food', desc: '隨意選擇市中心咖啡店享受午餐', lat: 45.5040, lng: -73.5680 },
+        { id: 103, date: '2025-12-23', time: '12:00', title: '市區活動 & 逛街', cat: 'spot', desc: 'Rue Saint-Denis 周邊逛街、Crew Collective & Café', lat: 45.5023, lng: -73.5593 },
+        { id: 104, date: '2025-12-23', time: '18:00', title: '晚餐: Ma Poule Mouillée', cat: 'food', desc: '葡式烤雞 (Walk-in)', lat: 45.5246, lng: -73.5739 },
+        { id: 105, date: '2025-12-23', time: '19:30', title: 'Airbnb Check-in', cat: 'drive', desc: '3808 Rue Saint-Denis, Montreal', lat: 45.5191, lng: -73.5756 },
 
-        // 12/24 Montreal Day 2
-        { id: 201, date: '2025-12-24', time: '09:30', title: 'St-Viateur Bagel', cat: 'food', desc: '地道手工 Bagel 早餐', lat: 45.5227, lng: -73.6020 },
-        { id: 202, date: '2025-12-24', time: '11:00', title: 'Saint Joseph\'s Oratory', cat: 'spot', desc: '聖約瑟大教堂，俯瞰全城', lat: 45.4925, lng: -73.6178 },
-        { id: 203, date: '2025-12-24', time: '14:00', title: 'Mont-Royal Lookout', cat: 'spot', desc: '皇家山公園觀景台拍照', lat: 45.5039, lng: -73.5878 },
+        // Day 2: 12/24
+        { id: 201, date: '2025-12-24', time: '08:30', title: '早餐: St-Viateur Bagel', cat: 'food', desc: '地道蒙特婁 Bagel', lat: 45.5227, lng: -73.6020 },
+        { id: 202, date: '2025-12-24', time: '09:30', title: '市區景點遊覽', cat: 'spot', desc: '摩天輪、Biodôme、Biosphere 生態園', lat: 45.5580, lng: -73.5499 },
+        { id: 203, date: '2025-12-24', time: '12:30', title: '午餐: Jean Talon Market', cat: 'food', desc: '市場附近輕食小吃', lat: 45.5362, lng: -73.6151 },
+        { id: 204, date: '2025-12-24', time: '13:30', title: 'Old Montreal 步行遊', cat: 'spot', desc: '聖保羅街、聖母大教堂、Square Saint-Louis', lat: 45.5048, lng: -73.5561 },
+        { id: 205, date: '2025-12-24', time: '16:30', title: '咖啡: Café Olimpico', cat: 'food', desc: '著名義式咖啡休憩', lat: 45.5201, lng: -73.5891 },
+        { id: 206, date: '2025-12-24', time: '17:30', title: '晚餐: Patati Patata', cat: 'food', desc: '熱門 Poutine / 小食 (Walk-in)', lat: 45.5178, lng: -73.5794 },
 
-        // 12/25 Quebec City (Christmas Day)
-        { id: 301, date: '2025-12-25', time: '07:00', title: '出發前往 Quebec City', cat: 'drive', desc: '車程約 3 小時，注意路面結冰', lat: 45.5017, lng: -73.5673 },
-        { id: 302, date: '2025-12-25', time: '10:30', title: 'Old Quebec 舊城區', cat: 'spot', desc: '停車建議：Hotel de Ville 停車場\n逛 Petit-Champlain 小尚普蘭街', lat: 46.8119, lng: -71.2052 },
-        { id: 303, date: '2025-12-25', time: '12:00', title: '芳堤娜城堡飯店', cat: 'spot', desc: 'Château Frontenac 與 Dufferin Terrace 拍照', lat: 46.8115, lng: -71.2050 },
-        { id: 304, date: '2025-12-25', time: '15:00', title: 'Toboggan Slide 冰滑梯', cat: 'spot', desc: '城堡酒店旁的雪橇滑道體驗', lat: 46.8115, lng: -71.2050 },
-        { id: 305, date: '2025-12-25', time: '18:00', title: 'Lévis 住宿 Check-in', cat: 'drive', desc: 'Repotel Levis (208 Route Kennedy)', lat: 46.8005, lng: -71.1685 },
+        // Day 3: 12/25
+        { id: 301, date: '2025-12-25', time: '06:00', title: '開車往 Quebec City', cat: 'drive', desc: '約 3 小時車程，早出發避開天氣影響', lat: 45.51, lng: -73.57 },
+        { id: 302, date: '2025-12-25', time: '09:30', title: '抵達 Old Quebec', cat: 'spot', desc: '停車：Dufferin Terrace 或舊城地下場', lat: 46.8119, lng: -71.2052 },
+        { id: 303, date: '2025-12-25', time: '09:45', title: '早餐: L’OMELETTE', cat: 'food', desc: 'Petit Déjeuner (Walk-in)', lat: 46.8123, lng: -71.2038 },
+        { id: 304, date: '2025-12-25', time: '10:15', title: 'Toboggan Slide', cat: 'spot', desc: '體驗冰滑梯，拍芳堤娜城堡全景', lat: 46.8115, lng: -71.2050 },
+        { id: 305, date: '2025-12-25', time: '12:15', title: '午餐: Le Casse-Crêpe Breton', cat: 'food', desc: '法式薄餅 (Walk-in)', lat: 46.8125, lng: -71.2091 },
+        { id: 306, date: '2025-12-25', time: '13:15', title: 'Old Quebec 步行大巡禮', cat: 'spot', desc: '小尚普蘭、皇家廣場、大壁畫、聖母大教堂、Pierre-Dugua-De-Mons 觀景台', lat: 46.8122, lng: -71.2019 },
+        { id: 307, date: '2025-12-25', time: '17:00', title: '晚餐: Cochon Dingue', cat: 'food', desc: '或者 Bistro Le Clan (Walk-in)', lat: 46.8126, lng: -71.2034 },
+        { id: 308, date: '2025-12-25', time: '18:15', title: 'Levis 酒店 Check-in', cat: 'drive', desc: 'Repotel Levis, 208 Route Kennedy', lat: 46.8005, lng: -71.1685 },
 
-        // 12/26 Quebec -> Toronto
-        { id: 401, date: '2025-12-26', time: '10:00', title: 'Dog Sledding 狗拉雪橇', cat: 'spot', desc: '33 Chemin de la Coulée, Lac-Beauport\n提前預約，穿保暖衣物', lat: 46.9463, lng: -71.2952 },
-        { id: 402, date: '2025-12-26', time: '12:30', title: '亞伯拉罕平原', cat: 'spot', desc: 'Plaines d\'Abraham 拍雪景與歷史炮台', lat: 46.8016, lng: -71.2215 },
-        { id: 403, date: '2025-12-26', time: '14:30', title: '啟程返多倫多', cat: 'drive', desc: '長途駕駛 (約 7-8 小時)，建議在 Kingston 休息', lat: 46.81, lng: -71.22 }
+        // Day 4: 12/26
+        { id: 401, date: '2025-12-26', time: '08:30', title: '早餐: L’OMELETTE', cat: 'food', desc: '或酒店附近簡單吃', lat: 46.8123, lng: -71.2038 },
+        { id: 402, date: '2025-12-26', time: '10:30', title: 'Dog Sled Check-in', cat: 'spot', desc: 'Pourvoirie du Lac-Beauport (33 Chemin de la Coulée)', lat: 46.9463, lng: -71.2952 },
+        { id: 403, date: '2025-12-26', time: '11:00', title: 'Dog Sled Ride 🐕', cat: 'spot', desc: '約 1 小時行程，需穿防水保暖衣', lat: 46.9463, lng: -71.2952 },
+        { id: 404, date: '2025-12-26', time: '12:15', title: '午餐: Café du Monde', cat: 'food', desc: '或附近咖啡店', lat: 46.8155, lng: -71.2015 },
+        { id: 405, date: '2025-12-26', time: '13:15', title: '亞伯拉罕平原拍照', cat: 'spot', desc: 'Plaines d\'Abraham 雪景攝影', lat: 46.8016, lng: -71.2215 },
+        { id: 406, date: '2025-12-26', time: '15:00', title: '開車返多倫多 🚗', cat: 'drive', desc: '約 7 小時車程，中途注意休息', lat: 44.2312, lng: -76.4860 }
     ];
 
     createApp({
@@ -207,10 +226,11 @@
                 schedule.value = JSON.parse(JSON.stringify(INITIAL_SCHEDULE));
                 expenses.value = [];
                 todos.value = [
-                    {id:1, title:'檢查雪地胎與雨刷精', done:false},
-                    {id:2, title:'下載 P$ Montréal 停車 App', done:false},
-                    {id:3, title:'預約 26 號狗拉雪橇', done:false},
-                    {id:4, title:'魁北克 25 號餐廳營業確認', done:false}
+                    {id:1, title:'Toboggan & 狗拉雪橇早上儘快去排隊', done:false},
+                    {id:2, title:'預備防滑雪靴 (市區步行多)', done:false},
+                    {id:3, title:'魁北克冬季路滑，開車需謹慎', done:false},
+                    {id:4, title:'一個人的話 walk-in 餐廳較容易', done:false},
+                    {id:5, title:'準備 P$ Montréal 停車 App', done:false}
                 ];
                 save();
             };
@@ -232,7 +252,7 @@
             const editItem = (type, item) => { modalType.value = type; modalMode.value = 'edit'; form.value = { ...item }; showModal.value = true; };
             
             const saveForm = () => {
-                let target = { schedule, money: expenses, todo: todos }[modalType.value];
+                let target = { schedule, money: expenses }[modalType.value];
                 if (modalMode.value === 'edit') {
                     const idx = target.value.findIndex(i => i.id === form.value.id);
                     target.value[idx] = { ...form.value };
@@ -244,7 +264,7 @@
             };
 
             const deleteFromModal = () => {
-                let target = { schedule, money: expenses, todo: todos }[modalType.value];
+                let target = { schedule, money: expenses }[modalType.value];
                 target.value = target.value.filter(i => i.id !== form.value.id);
                 save(); showModal.value = false; if(modalType.value === 'schedule') nextTick(initMap);
             };
